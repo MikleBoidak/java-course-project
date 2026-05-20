@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Облачное хранилище</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Модальное окно регистрации/входа -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <h2 id="authTitle">Вход в систему</h2>
+            <form id="authForm">
+                <input type="text" id="authLogin" placeholder="Логин" required>
+                <input type="email" id="authEmail" placeholder="Email" style="display: none;">
+                <input type="password" id="authPassword" placeholder="Пароль" required>
+                <button type="submit" id="authSubmitBtn">Войти</button>
+            </form>
+            <p id="authToggle">Нет аккаунта? <a href="#" id="switchToRegister">Зарегистрироваться</a></p>
+            <p id="authError" class="error"></p>
+        </div>
+    </div>
+
+    <!-- Основное приложение -->
+    <div id="app" style="display: none;">
+        <!-- Верхняя панель -->
+        <header class="header">
+            <h1>Облачное хранилище</h1>
+            <div class="header-controls">
+                <span id="userInfo"></span>
+                <button id="logoutBtn" class="btn-secondary">Выход</button>
+            </div>
+        </header>
+
+        <!-- Панель инструментов -->
+        <div class="toolbar">
+            <button id="createFolderBtn" class="btn-primary">📁 Создать папку</button>
+            <button id="uploadBtn" class="btn-primary">📤 Загрузить файл</button>
+            <input type="file" id="fileInput" multiple style="display: none;">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Поиск файлов...">
+                <button id="searchBtn">🔍</button>
+            </div>
+        </div>
+
+        <!-- Drag & Drop зона -->
+        <div id="dropZone" class="drop-zone">
+            <p>Перетащите файлы сюда для загрузки</p>
+        </div>
+
+        <!-- Основная область контента -->
+        <div class="main-content">
+            <!-- Боковая панель с навигацией -->
+            <aside class="sidebar">
+                <h3>Навигация</h3>
+                <nav>
+                    <button id="navFiles" class="nav-btn active">📄 Файлы</button>
+                    <button id="navPhotos" class="nav-btn">📷 Фотографии</button>
+                    <button id="navShared" class="nav-btn">🔗 Общий доступ</button>
+                </nav>
+                <div class="quota-info">
+                    <h4>Дисковое пространство</h4>
+                    <div class="quota-bar">
+                        <div id="quotaUsed" class="quota-used"></div>
+                    </div>
+                    <p id="quotaText"></p>
+                </div>
+            </aside>
+
+            <!-- Область просмотра файлов -->
+            <main class="content-area">
+                <div id="breadcrumb" class="breadcrumb"></div>
+                <div id="filesList" class="files-list"></div>
+                <div id="photosGallery" class="photos-gallery" style="display: none;"></div>
+                <div id="sharedList" class="shared-list" style="display: none;"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания папки -->
+    <div id="folderModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Создать папку</h2>
+            <input type="text" id="folderName" placeholder="Название папки">
+            <div class="modal-buttons">
+                <button id="createFolderConfirm" class="btn-primary">Создать</button>
+                <button id="createFolderCancel" class="btn-secondary">Отмена</button>
+            </div>
+            <p id="folderError" class="error"></p>
+        </div>
+    </div>
+
+    <!-- Модальное окно шаринга -->
+    <div id="shareModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Поделиться</h2>
+            <div class="share-tabs">
+                <button id="tabPublic" class="tab-btn active">Публичная ссылка</button>
+                <button id="tabUser" class="tab-btn">Конкретному пользователю</button>
+            </div>
+            <div id="publicShareContent">
+                <p>Создать публичную ссылку для скачивания:</p>
+                <button id="createPublicLink" class="btn-primary">Создать ссылку</button>
+                <div id="publicLinkResult" class="share-result"></div>
+            </div>
+            <div id="userShareContent" style="display: none;">
+                <input type="number" id="targetUserId" placeholder="ID пользователя">
+                <select id="sharePermission">
+                    <option value="READ">Только чтение</option>
+                    <option value="WRITE">Чтение и запись</option>
+                </select>
+                <button id="createUserShare" class="btn-primary">Поделиться</button>
+            </div>
+            <button id="shareClose" class="btn-secondary" style="margin-top: 1rem;">Закрыть</button>
+            <p id="shareError" class="error"></p>
+        </div>
+    </div>
+
+    <!-- Контекстное меню -->
+    <div id="contextMenu" class="context-menu" style="display: none;">
+        <button id="ctxDownload">⬇️ Скачать</button>
+        <button id="ctxShare">🔗 Поделиться</button>
+        <button id="ctxDelete" class="danger">🗑️ Удалить</button>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
