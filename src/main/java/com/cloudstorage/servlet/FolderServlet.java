@@ -16,8 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.fasterxml.jackson.databind.cfg.CoercionInputShape.String;
-
 /**
  * Сервлет управления папками
  * POST /api/folders - создание папки
@@ -41,7 +39,12 @@ public class FolderServlet extends HttpServlet {
         }
 
         try {
-            String body = req.getReader().lines().reduce("", String::concat);
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = req.getReader().readLine()) != null) {
+                sb.append(line);
+            }
+            String body = sb.toString();
             Map<String, Object> data = JsonUtils.fromJson(body, Map.class);
 
             String name = (String) data.get("name");

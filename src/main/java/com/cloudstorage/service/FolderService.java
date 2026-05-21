@@ -119,7 +119,7 @@ public class FolderService {
 
         // Помечаем все папки как удаленные
         for (Integer id : folderIdsToDelete) {
-            folderDao.softDelete(id);
+            folderDao.softDelete(id, userId);
         }
 
         // Помечаем все файлы как удаленные

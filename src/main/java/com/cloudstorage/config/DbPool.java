@@ -18,10 +18,10 @@ public class DbPool {
     static {
         try {
             HikariConfig config = new HikariConfig();
-            // Настройки подключения (можно вынести в properties)
+            // Настройки подключения
             config.setJdbcUrl("jdbc:postgresql://localhost:5432/cloudstorage");
             config.setUsername("postgres");
-            config.setPassword("postgres");
+            config.setPassword("1111");
             config.setDriverClassName("org.postgresql.Driver");
 
             // Настройки пула

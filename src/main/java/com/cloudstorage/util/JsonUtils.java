@@ -2,53 +2,46 @@ package com.cloudstorage.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
-import java.util.Map;
+import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 
-/**
- * Утилиты для работы с JSON
- */
 public class JsonUtils {
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-            .findAndRegisterModules()
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private JsonUtils() {}
+    static {
+        // Регистрируем кастомный сериализатор для Instant
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(Instant.class, new StdSerializer<Instant>(Instant.class) {
+            @Override
+            public void serialize(Instant value, com.fasterxml.jackson.core.JsonGenerator gen, SerializerProvider provider) throws IOException {
+                gen.writeString(DateTimeFormatter.ISO_INSTANT.format(value));
+            }
+        });
+        MAPPER.registerModule(module);
+    }
 
-    /**
-     * Сериализовать объект в JSON
-     */
     public static String toJson(Object obj) {
         try {
-            return objectMapper.writeValueAsString(obj);
+            return MAPPER.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Ошибка сериализации JSON", e);
         }
     }
 
-    /**
-     * Десериализовать JSON в объект
-     */
     public static <T> T fromJson(String json, Class<T> clazz) {
         try {
-            return objectMapper.readValue(json, clazz);
+            return MAPPER.readValue(json, clazz);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Ошибка десериализации JSON", e);
         }
     }
 
-    /**
-     * Создать JSON объект ошибки
-     */
     public static String errorJson(String message) {
-        return toJson(Map.of("error", message));
-    }
-
-    /**
-     * Создать JSON объект успеха
-     */
-    public static String successJson(Object data) {
-        return toJson(Map.of("success", true, "data", data));
+        return "{\"error\": \"" + message + "\"}";
     }
 }

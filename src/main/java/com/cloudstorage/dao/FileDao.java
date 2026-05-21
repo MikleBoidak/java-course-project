@@ -9,19 +9,19 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * DAO для работы с файлами
+ * DAO для работы с файлами (таблица file_items)
  */
 public class FileDao {
 
-    private static final String SELECT_BY_ID = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM files WHERE id = ? AND deleted = FALSE";
-    private static final String SELECT_BY_USER = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM files WHERE user_id = ? AND deleted = FALSE ORDER BY created_at DESC";
-    private static final String SELECT_BY_FOLDER = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM files WHERE user_id = ? AND folder_id IS ? AND deleted = FALSE ORDER BY created_at DESC";
-    private static final String INSERT = "INSERT INTO files (user_id, folder_id, original_name, storage_name, mime_type, size) VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
-    private static final String SOFT_DELETE = "UPDATE files SET deleted = TRUE WHERE id = ? AND user_id = ?";
-    private static final String SELECT_IMAGES = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM files WHERE user_id = ? AND mime_type LIKE 'image/%' AND deleted = FALSE ORDER BY created_at DESC";
-    private static final String SEARCH = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM files WHERE user_id = ? AND original_name ILIKE ? AND deleted = FALSE ORDER BY created_at DESC";
-    private static final String SEARCH_BY_TYPE = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM files WHERE user_id = ? AND original_name ILIKE ? AND mime_type LIKE ? AND deleted = FALSE ORDER BY created_at DESC";
-    private static final String SELECT_BY_IDS = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM files WHERE id = ANY(?) AND deleted = FALSE";
+    private static final String SELECT_BY_ID = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE id = ? AND deleted = FALSE";
+    private static final String SELECT_BY_USER = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE user_id = ? AND deleted = FALSE ORDER BY created_at DESC";
+    private static final String SELECT_BY_FOLDER = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE user_id = ? AND folder_id IS NOT DISTINCT FROM ? AND deleted = FALSE ORDER BY created_at DESC";
+    private static final String INSERT = "INSERT INTO file_items (user_id, folder_id, original_name, storage_name, mime_type, size) VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
+    private static final String SOFT_DELETE = "UPDATE file_items SET deleted = TRUE WHERE id = ? AND user_id = ?";
+    private static final String SELECT_IMAGES = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE user_id = ? AND mime_type LIKE 'image/%' AND deleted = FALSE ORDER BY created_at DESC";
+    private static final String SEARCH = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE user_id = ? AND original_name ILIKE ? AND deleted = FALSE ORDER BY created_at DESC";
+    private static final String SEARCH_BY_TYPE = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE user_id = ? AND original_name ILIKE ? AND mime_type LIKE ? AND deleted = FALSE ORDER BY created_at DESC";
+    private static final String SELECT_BY_IDS = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE id = ANY(?) AND deleted = FALSE";
 
     private FileItem mapRow(ResultSet rs) throws SQLException {
         FileItem file = new FileItem();
@@ -74,17 +74,13 @@ public class FileDao {
         try (Connection conn = DbPool.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_BY_FOLDER)) {
             stmt.setInt(1, userId);
-            if (folderId == null) {
-                stmt.setNull(2, Types.INTEGER);
-            } else {
-                stmt.setInt(2, folderId);
-            }
+            stmt.setObject(2, folderId, Types.INTEGER);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 files.add(mapRow(rs));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Ошибка получения файлов папки", e);
+            throw new RuntimeException("Ошибка получения файлов по папке", e);
         }
         return files;
     }

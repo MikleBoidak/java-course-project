@@ -10,12 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.postgresql.core.Oid.UUID;
 
 /**
  * Сервис управления общим доступом к файлам и папкам
@@ -38,20 +36,16 @@ public class ShareService {
      * Создать публичную ссылку
      */
     public PublicShare createPublicShare(int ownerId, int itemId, String itemType, Instant expiresAt) {
-        // Проверка типа и существования элемента
         if (!"FILE".equals(itemType) && !"FOLDER".equals(itemType)) {
             throw new AppException("Неверный тип элемента", 400);
         }
-
         validateOwnership(ownerId, itemId, itemType);
-
         PublicShare share = new PublicShare();
         share.setToken(UUID.randomUUID().toString());
         share.setItemId(itemId);
         share.setItemType(itemType);
         share.setUserId(ownerId);
         share.setExpiresAt(expiresAt);
-
         PublicShare created = shareDao.createPublicShare(share);
         logger.info("Создана публичная ссылка {} для {} {}", share.getToken(), itemType, itemId);
         return created;
@@ -68,41 +62,28 @@ public class ShareService {
      * Создать доступ для конкретного пользователя
      */
     public UserShare createUserShare(int ownerId, int itemId, String itemType, int targetUserId, String permission) {
-        // Проверка типа
         if (!"FILE".equals(itemType) && !"FOLDER".equals(itemType)) {
             throw new AppException("Неверный тип элемента", 400);
         }
-
-        // Проверка прав
         if (!"READ".equals(permission) && !"WRITE".equals(permission)) {
             throw new AppException("Неверный тип разрешения", 400);
         }
-
-        // Проверка существования целевого пользователя
         if (userDao.findById(targetUserId).isEmpty()) {
             throw new AppException("Целевой пользователь не найден", 404);
         }
-
-        // Нельзя шарить самому себе
         if (ownerId == targetUserId) {
             throw new AppException("Нельзя поделиться с самим собой", 400);
         }
-
-        // Проверка владения
         validateOwnership(ownerId, itemId, itemType);
-
-        // Проверка существования шаринга
         if (shareDao.findUserShare(itemId, itemType, targetUserId).isPresent()) {
             throw new AppException("Доступ уже предоставлен", 409);
         }
-
         UserShare share = new UserShare();
         share.setItemId(itemId);
         share.setItemType(itemType);
         share.setOwnerId(ownerId);
         share.setTargetUserId(targetUserId);
         share.setPermission(permission);
-
         UserShare created = shareDao.createUserShare(share);
         logger.info("Предоставлен доступ {} пользователю {} к {} {}", permission, targetUserId, itemType, itemId);
         return created;
@@ -113,13 +94,10 @@ public class ShareService {
      */
     public boolean canAccessFile(int fileId, Integer userId) {
         if (userId == null) return false;
-
         Optional<FileItem> file = fileDao.findById(fileId);
         if (file.isEmpty()) return false;
-
         // Владелец
-        if (file.get().getUserId().equals(userId)) return true;
-
+        if (file.get().getUserId() == userId) return true;
         // Проверка user_shares
         Optional<UserShare> share = shareDao.findUserShare(fileId, "FILE", userId);
         return share.isPresent();
@@ -130,13 +108,10 @@ public class ShareService {
      */
     public boolean canAccessFolder(int folderId, Integer userId) {
         if (userId == null) return false;
-
         Optional<Folder> folder = folderDao.findById(folderId);
         if (folder.isEmpty()) return false;
-
         // Владелец
-        if (folder.get().getUserId().equals(userId)) return true;
-
+        if (folder.get().getUserId() == userId) return true;
         // Проверка user_shares
         Optional<UserShare> share = shareDao.findUserShare(folderId, "FOLDER", userId);
         return share.isPresent();
@@ -147,7 +122,7 @@ public class ShareService {
      */
     public List<FileItem> getPublicFolderContents(int folderId) {
         return fileDao.findByFolder(
-                folderDao.findById(folderId).map(Folder::getUserId).orElse(0), 
+                folderDao.findById(folderId).map(Folder::getUserId).orElse(0),
                 folderId
         );
     }
@@ -167,7 +142,7 @@ public class ShareService {
         if (share.isEmpty()) {
             throw new AppException("Ссылка не найдена", 404);
         }
-        if (!share.get().getUserId().equals(userId)) {
+        if (share.get().getUserId() != userId) {
             throw new AppException("Нет доступа к ссылке", 403);
         }
         shareDao.deletePublicShare(token, userId);
@@ -181,13 +156,13 @@ public class ShareService {
         if ("FILE".equals(itemType)) {
             FileItem file = fileDao.findById(itemId)
                     .orElseThrow(() -> new AppException("Файл не найден", 404));
-            if (!file.getUserId().equals(ownerId)) {
+            if (file.getUserId() != ownerId) {
                 throw new AppException("Нет доступа к файлу", 403);
             }
         } else {
             Folder folder = folderDao.findById(itemId)
                     .orElseThrow(() -> new AppException("Папка не найдена", 404));
-            if (!folder.getUserId().equals(ownerId)) {
+            if (folder.getUserId() != ownerId) {
                 throw new AppException("Нет доступа к папке", 403);
             }
         }

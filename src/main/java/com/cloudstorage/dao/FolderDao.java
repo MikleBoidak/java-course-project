@@ -8,36 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * DAO для работы с папками
- */
 public class FolderDao {
 
-    private static final String SELECT_BY_ID = "SELECT id, user_id, name, parent_id, deleted, created_at FROM folders WHERE id = ? AND deleted = FALSE";
-    private static final String SELECT_BY_USER = "SELECT id, user_id, name, parent_id, deleted, created_at FROM folders WHERE user_id = ? AND deleted = FALSE ORDER BY name";
-    private static final String SELECT_BY_USER_AND_PARENT = "SELECT id, user_id, name, parent_id, deleted, created_at FROM folders WHERE user_id = ? AND parent_id IS ? AND deleted = FALSE ORDER BY name";
-    private static final String INSERT = "INSERT INTO folders (user_id, name, parent_id) VALUES (?, ?, ?) RETURNING id";
-    private static final String SOFT_DELETE = "UPDATE folders SET deleted = TRUE WHERE id = ? AND user_id = ?";
-    private static final String SOFT_DELETE_CHILDREN = "UPDATE folders SET deleted = TRUE WHERE parent_id = ? AND user_id = ?";
-    private static final String CHECK_DUPLICATE = "SELECT id FROM folders WHERE user_id = ? AND name = ? AND parent_id IS ? AND deleted = FALSE";
-
-    private Folder mapRow(ResultSet rs) throws SQLException {
-        Folder folder = new Folder();
-        folder.setId(rs.getInt("id"));
-        folder.setUserId(rs.getInt("user_id"));
-        folder.setName(rs.getString("name"));
-        folder.setParentId(rs.getObject("parent_id") != null ? rs.getInt("parent_id") : null);
-        folder.setDeleted(rs.getBoolean("deleted"));
-        Timestamp ts = rs.getTimestamp("created_at");
-        if (ts != null) {
-            folder.setCreatedAt(ts.toInstant());
-        }
-        return folder;
-    }
-
     public Optional<Folder> findById(int id) {
+        String sql = "SELECT id, user_id, name, parent_id, deleted, created_at FROM folders WHERE id = ? AND deleted = FALSE";
         try (Connection conn = DbPool.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -51,8 +27,9 @@ public class FolderDao {
 
     public List<Folder> findByUserId(int userId) {
         List<Folder> folders = new ArrayList<>();
+        String sql = "SELECT id, user_id, name, parent_id, deleted, created_at FROM folders WHERE user_id = ? AND deleted = FALSE ORDER BY name";
         try (Connection conn = DbPool.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SELECT_BY_USER)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -66,14 +43,11 @@ public class FolderDao {
 
     public List<Folder> findByUserAndParent(int userId, Integer parentId) {
         List<Folder> folders = new ArrayList<>();
+        String sql = "SELECT id, user_id, name, parent_id, deleted, created_at FROM folders WHERE user_id = ? AND parent_id IS NOT DISTINCT FROM ? AND deleted = FALSE ORDER BY name";
         try (Connection conn = DbPool.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SELECT_BY_USER_AND_PARENT)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
-            if (parentId == null) {
-                stmt.setNull(2, Types.INTEGER);
-            } else {
-                stmt.setInt(2, parentId);
-            }
+            stmt.setObject(2, parentId, Types.INTEGER);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 folders.add(mapRow(rs));
@@ -85,17 +59,13 @@ public class FolderDao {
     }
 
     public Folder create(Folder folder) {
+        String sql = "INSERT INTO folders (user_id, name, parent_id) VALUES (?, ?, ?) RETURNING id";
         try (Connection conn = DbPool.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, folder.getUserId());
             stmt.setString(2, folder.getName());
-            if (folder.getParentId() == null) {
-                stmt.setNull(3, Types.INTEGER);
-            } else {
-                stmt.setInt(3, folder.getParentId());
-            }
-            stmt.executeUpdate();
-            ResultSet rs = stmt.getGeneratedKeys();
+            stmt.setObject(3, folder.getParentId(), Types.INTEGER);
+            ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 folder.setId(rs.getInt(1));
             }
@@ -106,45 +76,48 @@ public class FolderDao {
     }
 
     public void softDelete(int folderId, int userId) {
-        try (Connection conn = DbPool.getConnection()) {
+        String deleteSelf = "UPDATE folders SET deleted = TRUE WHERE id = ? AND user_id = ?";
+        String deleteChildren = "UPDATE folders SET deleted = TRUE WHERE parent_id = ? AND user_id = ?";
+        try (Connection conn = DbPool.getConnection();
+             PreparedStatement stmtSelf = conn.prepareStatement(deleteSelf);
+             PreparedStatement stmtChildren = conn.prepareStatement(deleteChildren)) {
             conn.setAutoCommit(false);
-            try {
-                // Помечаем дочерние папки
-                try (PreparedStatement stmt = conn.prepareStatement(SOFT_DELETE_CHILDREN)) {
-                    stmt.setInt(1, folderId);
-                    stmt.setInt(2, userId);
-                    stmt.executeUpdate();
-                }
-                // Помечаем текущую папку
-                try (PreparedStatement stmt = conn.prepareStatement(SOFT_DELETE)) {
-                    stmt.setInt(1, folderId);
-                    stmt.setInt(2, userId);
-                    stmt.executeUpdate();
-                }
-                conn.commit();
-            } catch (SQLException e) {
-                conn.rollback();
-                throw e;
-            }
+            stmtChildren.setInt(1, folderId);
+            stmtChildren.setInt(2, userId);
+            stmtChildren.executeUpdate();
+            stmtSelf.setInt(1, folderId);
+            stmtSelf.setInt(2, userId);
+            stmtSelf.executeUpdate();
+            conn.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Ошибка удаления папки", e);
         }
     }
 
     public boolean existsByNameAndParent(int userId, String name, Integer parentId) {
+        String sql = "SELECT id FROM folders WHERE user_id = ? AND name = ? AND parent_id IS NOT DISTINCT FROM ? AND deleted = FALSE";
         try (Connection conn = DbPool.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(CHECK_DUPLICATE)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, userId);
             stmt.setString(2, name);
-            if (parentId == null) {
-                stmt.setNull(3, Types.INTEGER);
-            } else {
-                stmt.setInt(3, parentId);
-            }
+            stmt.setObject(3, parentId, Types.INTEGER);
             ResultSet rs = stmt.executeQuery();
             return rs.next();
         } catch (SQLException e) {
             throw new RuntimeException("Ошибка проверки дубликата папки", e);
         }
+    }
+
+    private Folder mapRow(ResultSet rs) throws SQLException {
+        Folder folder = new Folder();
+        folder.setId(rs.getInt("id"));
+        folder.setUserId(rs.getInt("user_id"));
+        folder.setName(rs.getString("name"));
+        int parentId = rs.getInt("parent_id");
+        folder.setParentId(rs.wasNull() ? null : parentId);
+        folder.setDeleted(rs.getBoolean("deleted"));
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) folder.setCreatedAt(ts.toInstant());
+        return folder;
     }
 }
