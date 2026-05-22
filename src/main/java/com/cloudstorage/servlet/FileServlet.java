@@ -78,7 +78,7 @@ public class FileServlet extends HttpServlet {
             if (item.isFormField()) {
                 if ("parentFolderId".equals(item.getFieldName())) {
                     String value = item.getString();
-                    if (value != null && !value.isEmpty()) {
+                    if (value != null && !value.isEmpty() && !"null".equals(value)) {
                         folderId = Integer.parseInt(value);
                     }
                 }

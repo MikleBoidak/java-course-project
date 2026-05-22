@@ -151,6 +151,13 @@ public class FolderService {
     }
 
     /**
+     * Получить папки в заданной родительской папке
+     */
+    public List<Folder> getFoldersByParent(int userId, Integer parentId) {
+        return folderDao.findByUserAndParent(userId, parentId);
+    }
+
+    /**
      * Получить папку по ID
      */
     public Folder getFolder(int folderId, int userId) {

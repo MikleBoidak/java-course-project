@@ -132,6 +132,43 @@ body {
     border-bottom: 1px solid #ddd;
 }
 
+#backButton {
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+}
+
+/* Блоки сообщений об ошибках */
+.error-message {
+    margin: 0.5rem 2rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.error-message.error {
+    background: #fee;
+    color: #c0392b;
+    border: 1px solid #e74c3c;
+}
+
+.error-message.info {
+    background: #e8f4f8;
+    color: #2980b9;
+    border: 1px solid #3498db;
+}
+
+#searchError {
+    background: #fff3e0;
+    color: #e65100;
+    border: 1px solid #ff9800;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .search-box {
     display: flex;
     margin-left: auto;

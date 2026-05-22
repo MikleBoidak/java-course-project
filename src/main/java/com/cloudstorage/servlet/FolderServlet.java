@@ -78,6 +78,15 @@ public class FolderServlet extends HttpServlet {
             if ("/tree".equals(path)) {
                 var tree = folderService.getFolderTree(currentUser.getId());
                 resp.getWriter().write(JsonUtils.toJson(tree));
+            } else if (path == null || "/".equals(path)) {
+                // Получить папки в заданной родительской папке (или корневые)
+                String parentIdStr = req.getParameter("parentId");
+                Integer parentId = null;
+                if (parentIdStr != null && !parentIdStr.isEmpty() && !"null".equals(parentIdStr)) {
+                    parentId = Integer.parseInt(parentIdStr);
+                }
+                var folders = folderService.getFoldersByParent(currentUser.getId(), parentId);
+                resp.getWriter().write(JsonUtils.toJson(folders));
             } else {
                 sendError(resp, HttpServletResponse.SC_NOT_FOUND, "Not found");
             }

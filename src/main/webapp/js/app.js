@@ -8,6 +8,7 @@ const state = {
     user: null,
     currentFolderId: null,
     files: [],
+    currentFolders: [],
     folders: [],
     isRegisterMode: false,
     contextMenuItem: null
@@ -58,6 +59,67 @@ document.addEventListener('DOMContentLoaded', () => {
 function initAuth() {
     // Проверка существующей сессии
     checkSession();
+}
+
+// ==================== Навигация ====================
+
+function updateBackButtonVisibility() {
+    const backBtn = document.getElementById('backButton');
+    if (backBtn) {
+        backBtn.style.display = state.currentFolderId === null ? 'none' : 'inline-block';
+    }
+}
+
+async function goBack() {
+    if (state.currentFolderId === null) {
+        showMessage('Вы уже в корневой папке', 'info');
+        return;
+    }
+
+    try {
+        // Получаем информацию о текущей папке, чтобы узнать parentId
+        const folder = await api.get(`/api/folders/${state.currentFolderId}`);
+        const parentId = folder.parentId || folder.parent_id || null;
+
+        state.currentFolderId = parentId;
+        await loadFiles();
+        updateBackButtonVisibility();
+    } catch (err) {
+        console.error('Ошибка навигации назад:', err);
+        if (err.message.includes('401')) {
+            window.location.href = '/login';
+            return;
+        }
+        showMessage('Ошибка навигации. Возврат в корень.', 'error');
+        state.currentFolderId = null;
+        await loadFiles();
+        updateBackButtonVisibility();
+    }
+}
+
+function showMessage(text, type = 'error') {
+    const errorEl = document.getElementById('errorMessage');
+    if (!errorEl) return;
+
+    errorEl.textContent = text;
+    errorEl.className = `error-message ${type === 'info' ? 'info' : 'error'}`;
+    errorEl.style.display = 'block';
+
+    setTimeout(() => {
+        errorEl.style.display = 'none';
+    }, 3000);
+}
+
+function showSearchMessage(text) {
+    const errorEl = document.getElementById('searchError');
+    if (!errorEl) return;
+
+    errorEl.textContent = text;
+    errorEl.style.display = 'block';
+
+    setTimeout(() => {
+        errorEl.style.display = 'none';
+    }, 3000);
 }
 
 async function checkSession() {
@@ -144,13 +206,27 @@ function toggleAuthMode() {
 
 async function loadFiles() {
     try {
-        const url = state.currentFolderId 
+        // Загружаем файлы
+        const url = state.currentFolderId
             ? `/api/files?folderId=${state.currentFolderId}`
             : '/api/files';
         state.files = await api.get(url);
+
+        // Загружаем папки текущей директории
+        const foldersUrl = state.currentFolderId
+            ? `/api/folders?parentId=${state.currentFolderId}`
+            : '/api/folders';
+        state.currentFolders = await api.get(foldersUrl);
+
         renderFiles();
+        updateBackButtonVisibility();
     } catch (err) {
         console.error('Ошибка загрузки файлов:', err);
+        if (err.message.includes('401')) {
+            window.location.href = '/login';
+            return;
+        }
+        showMessage('Ошибка загрузки файлов', 'error');
     }
 }
 
@@ -167,44 +243,55 @@ function renderFiles() {
     const container = document.getElementById('filesList');
     container.innerHTML = '';
     
-    // Папки
-    const folderItems = state.files.filter(f => f.folderId === state.currentFolderId);
-    folderItems.forEach(item => {
-        const el = createFileElement(item, true);
+    // Папки (из отдельного запроса)
+    state.currentFolders.forEach(folder => {
+        const el = createFolderElement(folder);
         container.appendChild(el);
     });
     
     // Файлы
-    const fileItems = state.files.filter(f => !isFolder(f));
-    fileItems.forEach(item => {
-        const el = createFileElement(item, false);
+    state.files.forEach(item => {
+        const el = createFileElement(item);
         container.appendChild(el);
     });
 }
 
-function isFolder(item) {
-    // Простая проверка - если естьChildren или специальный флаг
-    return item.children !== undefined;
+function createFolderElement(folder) {
+    const div = document.createElement('div');
+    div.className = 'file-item folder';
+    div.innerHTML = `
+        <button class="file-menu-btn" data-id="${folder.id}" data-type="folder">⋮</button>
+        <div class="file-icon">📁</div>
+        <div class="file-name">${escapeHtml(folder.name)}</div>
+        <div class="file-size"></div>
+    `;
+
+    div.addEventListener('click', (e) => {
+        if (e.target.classList.contains('file-menu-btn')) {
+            showContextMenu(e, folder, 'folder');
+        } else {
+            state.currentFolderId = folder.id;
+            loadFiles();
+            updateBreadcrumb();
+        }
+    });
+
+    return div;
 }
 
-function createFileElement(item, isFolder) {
+function createFileElement(item) {
     const div = document.createElement('div');
-    div.className = `file-item ${isFolder ? 'folder' : ''}`;
+    div.className = 'file-item';
     div.innerHTML = `
-        <button class="file-menu-btn" data-id="${item.id}" data-type="${isFolder ? 'folder' : 'file'}">⋮</button>
-        <div class="file-icon">${isFolder ? '📁' : getFileIcon(item.mimeType)}</div>
+        <button class="file-menu-btn" data-id="${item.id}" data-type="file">⋮</button>
+        <div class="file-icon">${getFileIcon(item.mimeType)}</div>
         <div class="file-name">${escapeHtml(item.originalName || item.name)}</div>
         <div class="file-size">${formatSize(item.size)}</div>
     `;
     
-    // Клик по элементу (не по кнопке меню)
     div.addEventListener('click', (e) => {
         if (e.target.classList.contains('file-menu-btn')) {
-            showContextMenu(e, item, isFolder ? 'folder' : 'file');
-        } else if (isFolder) {
-            state.currentFolderId = item.id;
-            loadFiles();
-            updateBreadcrumb();
+            showContextMenu(e, item, 'file');
         } else {
             downloadFile(item.id);
         }
@@ -481,6 +568,12 @@ async function createUserShare() {
 
 async function handleSearch() {
     const query = document.getElementById('searchInput').value.trim();
+    const searchErrorEl = document.getElementById('searchError');
+
+    // Скрываем предыдущие ошибки
+    if (searchErrorEl) searchErrorEl.style.display = 'none';
+
+    // Пустой запрос — показываем содержимое текущей папки
     if (!query) {
         loadFiles();
         return;
@@ -489,8 +582,16 @@ async function handleSearch() {
     try {
         const results = await api.get(`/api/search?query=${encodeURIComponent(query)}`);
         renderSearchResults(results);
+        // При поиске скрываем кнопку «Назад», так как мы не в папке
+        const backBtn = document.getElementById('backButton');
+        if (backBtn) backBtn.style.display = 'none';
     } catch (err) {
         console.error('Ошибка поиска:', err);
+        if (err.message.includes('401')) {
+            window.location.href = '/login';
+            return;
+        }
+        showSearchMessage('Не удалось выполнить поиск. Попробуйте позже.');
     }
 }
 
@@ -504,7 +605,7 @@ function renderSearchResults(results) {
     }
     
     results.forEach(item => {
-        const el = createFileElement(item, false);
+        const el = createFileElement(item);
         container.appendChild(el);
     });
 }
@@ -629,6 +730,9 @@ function initEventListeners() {
         if (e.key === 'Enter') handleSearch();
     });
     
+    // Навигация назад
+    document.getElementById('backButton').addEventListener('click', goBack);
+
     // Навигация
     document.getElementById('navFiles').addEventListener('click', () => switchView('files'));
     document.getElementById('navPhotos').addEventListener('click', () => switchView('photos'));
