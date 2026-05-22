@@ -24,7 +24,12 @@ const api = {
                 ...options.headers
             }
         });
-        
+
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('401');
+        }
+
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
             const data = await response.json();
@@ -33,11 +38,11 @@ const api = {
             }
             return data;
         }
-        
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
-        
+
         return response;
     },
 
@@ -77,19 +82,12 @@ async function goBack() {
     }
 
     try {
-        // Получаем информацию о текущей папке, чтобы узнать parentId
         const folder = await api.get(`/api/folders/${state.currentFolderId}`);
-        const parentId = folder.parentId || folder.parent_id || null;
-
-        state.currentFolderId = parentId;
+        state.currentFolderId = folder.parentId || folder.parent_id || null;
         await loadFiles();
         updateBackButtonVisibility();
     } catch (err) {
         console.error('Ошибка навигации назад:', err);
-        if (err.message.includes('401')) {
-            window.location.href = '/login';
-            return;
-        }
         showMessage('Ошибка навигации. Возврат в корень.', 'error');
         state.currentFolderId = null;
         await loadFiles();
@@ -97,28 +95,18 @@ async function goBack() {
     }
 }
 
-function showMessage(text, type = 'error') {
-    const errorEl = document.getElementById('errorMessage');
-    if (!errorEl) return;
+function showMessage(text, type = 'error', elementId = 'errorMessage') {
+    const el = document.getElementById(elementId);
+    if (!el) return;
 
-    errorEl.textContent = text;
-    errorEl.className = `error-message ${type === 'info' ? 'info' : 'error'}`;
-    errorEl.style.display = 'block';
-
-    setTimeout(() => {
-        errorEl.style.display = 'none';
-    }, 3000);
-}
-
-function showSearchMessage(text) {
-    const errorEl = document.getElementById('searchError');
-    if (!errorEl) return;
-
-    errorEl.textContent = text;
-    errorEl.style.display = 'block';
+    el.textContent = text;
+    if (elementId === 'errorMessage') {
+        el.className = `error-message ${type === 'info' ? 'info' : 'error'}`;
+    }
+    el.style.display = 'block';
 
     setTimeout(() => {
-        errorEl.style.display = 'none';
+        el.style.display = 'none';
     }, 3000);
 }
 
@@ -186,19 +174,9 @@ function toggleAuthMode() {
     document.getElementById('authTitle').textContent = state.isRegisterMode ? 'Регистрация' : 'Вход в систему';
     document.getElementById('authEmail').style.display = state.isRegisterMode ? 'block' : 'none';
     document.getElementById('authSubmitBtn').textContent = state.isRegisterMode ? 'Зарегистрироваться' : 'Войти';
-    document.getElementById('authToggle').innerHTML = state.isRegisterMode 
+    document.getElementById('authToggle').innerHTML = state.isRegisterMode
         ? 'Уже есть аккаунт? <a href="#" id="switchToLogin">Войти</a>'
         : 'Нет аккаунта? <a href="#" id="switchToRegister">Зарегистрироваться</a>';
-    
-    // Переназначаем обработчик переключения
-    const toggleLink = state.isRegisterMode ? document.getElementById('switchToLogin') : document.getElementById('switchToRegister');
-    if (toggleLink) {
-        toggleLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleAuthMode();
-        });
-    }
-    
     document.getElementById('authError').textContent = '';
 }
 
@@ -222,10 +200,6 @@ async function loadFiles() {
         updateBackButtonVisibility();
     } catch (err) {
         console.error('Ошибка загрузки файлов:', err);
-        if (err.message.includes('401')) {
-            window.location.href = '/login';
-            return;
-        }
         showMessage('Ошибка загрузки файлов', 'error');
     }
 }
@@ -390,7 +364,7 @@ async function uploadFiles(files) {
             await loadFiles();
             updateQuotaInfo();
         } catch (err) {
-            alert(`Ошибка загрузки ${file.name}: ${err.message}`);
+            showMessage(`Ошибка загрузки ${file.name}: ${err.message}`);
         }
     }
 }
@@ -411,7 +385,7 @@ async function deleteFile(itemId, itemType) {
         await loadFolderTree();
         updateQuotaInfo();
     } catch (err) {
-        alert(`Ошибка удаления: ${err.message}`);
+        showMessage(`Ошибка удаления: ${err.message}`);
     }
 }
 
@@ -587,11 +561,7 @@ async function handleSearch() {
         if (backBtn) backBtn.style.display = 'none';
     } catch (err) {
         console.error('Ошибка поиска:', err);
-        if (err.message.includes('401')) {
-            window.location.href = '/login';
-            return;
-        }
-        showSearchMessage('Не удалось выполнить поиск. Попробуйте позже.');
+        showMessage('Не удалось выполнить поиск. Попробуйте позже.', 'error', 'searchError');
     }
 }
 
@@ -695,9 +665,11 @@ async function updateQuotaInfo() {
 function initEventListeners() {
     // Аутентификация
     document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
-    document.getElementById('switchToRegister').addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleAuthMode();
+    document.getElementById('authToggle').addEventListener('click', (e) => {
+        if (e.target.tagName === 'A') {
+            e.preventDefault();
+            toggleAuthMode();
+        }
     });
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     

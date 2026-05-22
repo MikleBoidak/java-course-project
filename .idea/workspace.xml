@@ -10,12 +10,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="78973575-fef6-430e-8be0-c7b21090d980" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/BaseServlet.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/service/FolderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/service/FolderService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/dao/FileDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/dao/FileDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/dao/FolderDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/dao/FolderDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/service/ExifService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/service/ExifService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/AdminServlet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/AdminServlet.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/AuthServlet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/AuthServlet.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/FileServlet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/FileServlet.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/FolderServlet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/FolderServlet.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/PublicAccessServlet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/PublicAccessServlet.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/SearchServlet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/SearchServlet.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/ShareServlet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/cloudstorage/servlet/ShareServlet.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/webapp/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/webapp/css/style.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/webapp/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/webapp/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/webapp/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/webapp/js/app.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -219,7 +227,8 @@
       <workItem from="1779293827990" duration="1491000" />
       <workItem from="1779376557603" duration="671000" />
       <workItem from="1779433103146" duration="2268000" />
-      <workItem from="1779441248167" duration="2907000" />
+      <workItem from="1779441248167" duration="4031000" />
+      <workItem from="1779479635645" duration="3222000" />
     </task>
     <servers />
   </component>

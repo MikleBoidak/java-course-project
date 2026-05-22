@@ -78,19 +78,38 @@ public class FolderDao {
     public void softDelete(int folderId, int userId) {
         String deleteSelf = "UPDATE folders SET deleted = TRUE WHERE id = ? AND user_id = ?";
         String deleteChildren = "UPDATE folders SET deleted = TRUE WHERE parent_id = ? AND user_id = ?";
-        try (Connection conn = DbPool.getConnection();
-             PreparedStatement stmtSelf = conn.prepareStatement(deleteSelf);
-             PreparedStatement stmtChildren = conn.prepareStatement(deleteChildren)) {
+        Connection conn = null;
+        try {
+            conn = DbPool.getConnection();
             conn.setAutoCommit(false);
-            stmtChildren.setInt(1, folderId);
-            stmtChildren.setInt(2, userId);
-            stmtChildren.executeUpdate();
-            stmtSelf.setInt(1, folderId);
-            stmtSelf.setInt(2, userId);
-            stmtSelf.executeUpdate();
+            try (PreparedStatement stmtChildren = conn.prepareStatement(deleteChildren);
+                 PreparedStatement stmtSelf = conn.prepareStatement(deleteSelf)) {
+                stmtChildren.setInt(1, folderId);
+                stmtChildren.setInt(2, userId);
+                stmtChildren.executeUpdate();
+                stmtSelf.setInt(1, folderId);
+                stmtSelf.setInt(2, userId);
+                stmtSelf.executeUpdate();
+            }
             conn.commit();
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    // ignore rollback error
+                }
+            }
             throw new RuntimeException("Ошибка удаления папки", e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    // ignore close error
+                }
+            }
         }
     }
 

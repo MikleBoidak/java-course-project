@@ -21,7 +21,7 @@ public class FileDao {
     private static final String SELECT_IMAGES = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE user_id = ? AND mime_type LIKE 'image/%' AND deleted = FALSE ORDER BY created_at DESC";
     private static final String SEARCH = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE user_id = ? AND original_name ILIKE ? AND deleted = FALSE ORDER BY created_at DESC";
     private static final String SEARCH_BY_TYPE = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE user_id = ? AND original_name ILIKE ? AND mime_type LIKE ? AND deleted = FALSE ORDER BY created_at DESC";
-    private static final String SELECT_BY_IDS = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE id = ANY(?) AND deleted = FALSE";
+    private static final String SELECT_BY_IDS = "SELECT id, user_id, folder_id, original_name, storage_name, mime_type, size, deleted, created_at, updated_at FROM file_items WHERE folder_id = ANY(?) AND deleted = FALSE";
 
     private FileItem mapRow(ResultSet rs) throws SQLException {
         FileItem file = new FileItem();

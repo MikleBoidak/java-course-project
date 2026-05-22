@@ -7,7 +7,6 @@ import com.cloudstorage.util.JsonUtils;
 import com.cloudstorage.util.SessionUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.fileupload2.core.DiskFileItem;
@@ -33,7 +32,7 @@ import java.util.Map;
  * DELETE /api/files?id={fileId} - удаление
  */
 @WebServlet("/api/files/*")
-public class FileServlet extends HttpServlet {
+public class FileServlet extends BaseServlet {
     private static final Logger logger = LoggerFactory.getLogger(FileServlet.class);
     private final FileService fileService = new FileService();
 
@@ -222,19 +221,4 @@ public class FileServlet extends HttpServlet {
         }
     }
 
-    private void sendError(HttpServletResponse resp, int status, String message) throws IOException {
-        resp.setStatus(status);
-        resp.getWriter().write(JsonUtils.errorJson(message));
-    }
-
-    private void handleError(HttpServletResponse resp, Exception e) throws IOException {
-        if (e instanceof com.cloudstorage.exception.AppException appEx) {
-            resp.setStatus(appEx.getStatusCode());
-            resp.getWriter().write(JsonUtils.errorJson(appEx.getMessage()));
-        } else {
-            logger.error("Ошибка при работе с файлами: {}", e.getMessage(), e);
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(JsonUtils.errorJson("Внутренняя ошибка сервера"));
-        }
-    }
 }

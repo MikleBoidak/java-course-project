@@ -7,7 +7,6 @@ import com.cloudstorage.util.JsonUtils;
 import com.cloudstorage.util.SessionUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -23,7 +22,7 @@ import java.util.Map;
  * DELETE /api/folders?id={folderId} - удаление
  */
 @WebServlet("/api/folders/*")
-public class FolderServlet extends HttpServlet {
+public class FolderServlet extends BaseServlet {
     private static final Logger logger = LoggerFactory.getLogger(FolderServlet.class);
     private final FolderService folderService = new FolderService();
 
@@ -123,19 +122,4 @@ public class FolderServlet extends HttpServlet {
         }
     }
 
-    private void sendError(HttpServletResponse resp, int status, String message) throws IOException {
-        resp.setStatus(status);
-        resp.getWriter().write(JsonUtils.errorJson(message));
-    }
-
-    private void handleError(HttpServletResponse resp, Exception e) throws IOException {
-        if (e instanceof com.cloudstorage.exception.AppException appEx) {
-            resp.setStatus(appEx.getStatusCode());
-            resp.getWriter().write(JsonUtils.errorJson(appEx.getMessage()));
-        } else {
-            logger.error("Ошибка при работе с папками: {}", e.getMessage(), e);
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(JsonUtils.errorJson("Внутренняя ошибка сервера"));
-        }
-    }
 }

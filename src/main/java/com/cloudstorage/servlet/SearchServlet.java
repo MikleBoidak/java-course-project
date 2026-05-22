@@ -6,7 +6,6 @@ import com.cloudstorage.util.JsonUtils;
 import com.cloudstorage.util.SessionUtils;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -19,7 +18,7 @@ import java.io.IOException;
  * GET /api/search?query=...&type=...
  */
 @WebServlet("/api/search")
-public class SearchServlet extends HttpServlet {
+public class SearchServlet extends BaseServlet {
     private static final Logger logger = LoggerFactory.getLogger(SearchServlet.class);
     private final FileService fileService = new FileService();
 
@@ -57,19 +56,4 @@ public class SearchServlet extends HttpServlet {
         resp.getWriter().write(JsonUtils.errorJson("Method not allowed"));
     }
 
-    private void sendError(HttpServletResponse resp, int status, String message) throws IOException {
-        resp.setStatus(status);
-        resp.getWriter().write(JsonUtils.errorJson(message));
-    }
-
-    private void handleError(HttpServletResponse resp, Exception e) throws IOException {
-        if (e instanceof com.cloudstorage.exception.AppException appEx) {
-            resp.setStatus(appEx.getStatusCode());
-            resp.getWriter().write(JsonUtils.errorJson(appEx.getMessage()));
-        } else {
-            logger.error("Ошибка при поиске: {}", e.getMessage(), e);
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(JsonUtils.errorJson("Внутренняя ошибка сервера"));
-        }
-    }
 }

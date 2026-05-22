@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Date;
 
 /**
@@ -45,7 +44,7 @@ public class ExifService {
             if (subDir != null) {
                 Date dateTaken = subDir.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
                 if (dateTaken != null) {
-                    photoMeta.setDateTaken(dateTaken.toInstant().atZone(ZoneId.systemDefault()).toInstant());
+                    photoMeta.setDateTaken(dateTaken.toInstant());
                 }
             }
 
@@ -55,7 +54,7 @@ public class ExifService {
                 if (ifd0Dir != null) {
                     Date dateTaken = ifd0Dir.getDate(ExifIFD0Directory.TAG_DATETIME);
                     if (dateTaken != null) {
-                        photoMeta.setDateTaken(dateTaken.toInstant().atZone(ZoneId.systemDefault()).toInstant());
+                        photoMeta.setDateTaken(dateTaken.toInstant());
                     }
                 }
             }
